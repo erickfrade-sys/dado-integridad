@@ -194,8 +194,6 @@ details.conducta summary{padding:12px 18px;font-weight:700;color:var(--bosque-2)
 .estado svg{width:22px;height:22px;flex:none;margin-top:2px}
 .estado.ok{background:rgba(6,150,74,.12);color:#05612F}
 .estado.pend{background:#FFF4DC;color:#7A4A00}
-.enviar-forms{display:grid;gap:12px;margin-top:18px;padding:16px 18px;border-radius:14px;background:#EEF6D0;border:1.5px solid #B8D810}
-.enviar-forms .btn{justify-self:start}
 .estado.cargando{background:var(--papel-2);color:var(--tinta-2)}
 .resumen{display:grid;gap:12px;margin-top:20px}
 .res-item{display:grid;grid-template-columns:12px 1fr auto;gap:12px;align-items:start;padding:12px 0;border-top:1.5px solid var(--papel-2)}
@@ -503,14 +501,10 @@ tr.detalle td{background:#fff}
           <h2 id="cierre-titulo"></h2>
           <p class="intro" id="cierre-meta"></p>
           <div class="estado cargando" id="estado-guardado" role="status">Guardando en el registro de integridad…</div>
-          <div class="enviar-forms" id="caja-forms" hidden>
-            <p><b>Último paso:</b> pulsa el botón, revisa tus respuestas en el formulario del Jardín y oprime <b>Enviar</b>. Así queda registrada tu participación.</p>
-            <a class="btn btn-pri" id="btn-forms" href="#" target="_blank" rel="noopener">Enviar mis resultados al Jardín</a>
-          </div>
           <div class="resumen" id="resumen"></div>
           <div class="acciones" style="margin-top:22px">
             <button class="btn btn-papel" type="button" id="btn-nueva">Jugar otra vez</button>
-            <button class="btn btn-papel" type="button" id="btn-descargar" hidden>Descargar resumen</button>
+            <button class="btn btn-papel" type="button" id="btn-descargar" hidden>Descargar mis resultados</button>
             <button class="btn btn-papel" type="button" id="btn-copiar">Copiar resumen</button>
           </div>
           <textarea id="texto-copia" class="oculto-sr" aria-hidden="true" tabindex="-1"></textarea>
@@ -535,39 +529,6 @@ tr.detalle td{background:#fff}
       </form>
     </section>
 
-    <!-- PANEL (VERSIÓN WEB) -->
-    <section data-pantalla="panelweb" hidden>
-      <div class="panel-cab">
-        <div>
-          <span class="pildora">Solo gestores de integridad</span>
-          <h1 style="margin-top:12px">Panel del dado</h1>
-          <p>En esta versión pública, los resultados de cada partida llegan al formulario de Microsoft Forms del Jardín.</p>
-        </div>
-        <div class="acciones"><button class="btn-link" type="button" data-ir="inicio">Volver al inicio</button></div>
-      </div>
-      <div class="panel-grid">
-        <div class="papel">
-          <span class="etiqueta">Resultados</span>
-          <h3 style="font-size:22px;margin-top:4px">Ver las partidas registradas</h3>
-          <p class="intro">Se abren con tu cuenta institucional de Microsoft 365. Solo las ven las personas con quienes compartas el formulario.</p>
-          <div class="acciones" style="margin-top:18px">
-            <a class="btn btn-pri" id="lnk-forms-res" href="#" target="_blank" rel="noopener">Ver respuestas en Forms</a>
-            <a class="btn btn-papel" id="lnk-excel-res" href="#" target="_blank" rel="noopener">Abrir el Excel de respuestas</a>
-          </div>
-          <p class="estado pend" id="panelweb-pend" hidden>Los enlaces a los resultados todavía no están conectados. Cuando el formulario esté creado, se agregan aquí.</p>
-        </div>
-        <div class="papel">
-          <span class="etiqueta">Seguimiento</span>
-          <h3 style="font-size:22px;margin-top:4px">Rutina sugerida para gestores</h3>
-          <ol class="reglas" style="margin-top:14px">
-            <li><div><b>Revisa las respuestas cada semana</b><p>En Forms verás el total de partidas y los gráficos de cada pregunta.</p></div></li>
-            <li><div><b>Exporta el Excel</b><p>Guárdalo en la carpeta de evidencias de integridad como respaldo.</p></div></li>
-            <li><div><b>Mira los valores más lejanos</b><p>Las cercanías bajas muestran qué valores reforzar en las sesiones.</p></div></li>
-          </ol>
-        </div>
-      </div>
-    </section>
-
     <!-- PANEL -->
     <section data-pantalla="panel" hidden>
       <div class="panel-cab">
@@ -577,6 +538,7 @@ tr.detalle td{background:#fff}
           <p id="panel-actualizado">Partidas registradas en esta aplicación.</p>
         </div>
         <div class="acciones">
+          <label class="btn btn-sec" id="importar" hidden>Cargar archivos de resultados<input type="file" id="archivos" accept=".html,.htm,.json" multiple hidden></label>
           <button class="btn btn-sec" type="button" id="btn-actualizar">Actualizar</button>
           <button class="btn btn-pri" type="button" id="btn-exportar">Exportar a Excel</button>
           <button class="btn-link" type="button" data-ir="inicio">Volver al inicio</button>
@@ -655,13 +617,9 @@ const CARAS = ['rotateY(0deg)','rotateY(90deg)','rotateY(180deg)','rotateY(-90de
 const ORIENTA = [[0,0],[0,-90],[0,-180],[0,90],[-90,0],[90,0]];
 const ESCALA = ['Muy lejos','Lejos','A medias','Cerca','Casi igual'];
 const CLAVE_BORRADOR = 'dadoIntegridadJBB.borrador.v1';
-/* Enlace prellenado de Microsoft Forms. Pega aquí el enlace prellenado donde cada pregunta tiene su marcador (D01 a D15).
-   Vacío = no se muestra el botón de envío. */
-const FORMS_PRELLENADO = '';
-const LIMITE_URL = 7000;
-/* Versión web (fuera de Claude): el panel enlaza a los resultados en Microsoft 365. */
-const FORMS_RESULTADOS = '';
-const EXCEL_RESULTADOS = '';
+/* Fuera de Claude, las partidas se guardan en este equipo y se consolidan cargando archivos de resultados. */
+const CLAVE_PARTIDAS = 'dadoIntegridadJBB.partidas.v1';
+const MARCA_ARCHIVO = 'dado-integridad-jbb';
 
 const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
@@ -680,7 +638,7 @@ async function usar(n){ try{ return (window.claude && window.claude.use) ? await
 (async function(){
   const [db,user,downloads] = await Promise.all([usar('db'),usar('user'),usar('downloads')]);
   cap = {db,user,downloads};
-  if(downloads) $('#btn-descargar').hidden = false;
+  if(downloads || !window.claude) $('#btn-descargar').hidden = false;
 })();
 
 /* ---------- Borrador local ---------- */
@@ -701,8 +659,7 @@ function ir(p){
   if(p==='juego') pintarJuego();
   if(p==='comparar') pintarComparar();
   if(p==='despues') pintarDespues();
-  if(p==='panel'){ if(!panelAbierto()){ ir('acceso'); return; } if(!cap.db){ ir('panelweb'); return; } cargarPanel(); }
-  if(p==='panelweb'){ if(!panelAbierto()){ ir('acceso'); return; } pintarPanelWeb(); }
+  if(p==='panel'){ if(!panelAbierto()){ ir('acceso'); return; } cargarPanel(); }
   guardarBorrador();
   window.scrollTo({top:0, behavior: reduceMov ? 'auto' : 'smooth'});
 }
@@ -985,7 +942,6 @@ async function terminar(){
   const res = await guardarPartida(partida);
   S.guardado = res.ok;
   if(res.ok) estado('ok','Quedó guardado en el registro de la gestión de integridad del Jardín.');
-  else if(FORMS_PRELLENADO) $('#estado-guardado').hidden = true;
   else estado('pend', res.msg);
 }
 function estado(tipo, msg){
@@ -994,7 +950,18 @@ function estado(tipo, msg){
   el.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+ico+'</svg><span></span>';
   el.querySelector('span').textContent = msg;
 }
+function partidasLocales(){ try{ const a = JSON.parse(localStorage.getItem(CLAVE_PARTIDAS)||'[]'); return Array.isArray(a) ? a : []; }catch(e){ return []; } }
+function agregarLocales(lista){
+  const mapa = new Map(partidasLocales().map(x => [x.id, x])); let nuevas = 0;
+  lista.forEach(x => { if(x && typeof x.id==='string' && x.valores && x.registro && !mapa.has(x.id)){ mapa.set(x.id, x); nuevas++; } });
+  try{ localStorage.setItem(CLAVE_PARTIDAS, JSON.stringify(Array.from(mapa.values()))); }catch(e){ return -1; }
+  return nuevas;
+}
 async function guardarPartida(p){
+  if(!(cap.db || await usar('db'))){
+    const n = agregarLocales([p]);
+    return {ok:false, msg: (n<0 ? 'No se pudo guardar en este equipo. ' : 'Tu partida quedó guardada en este equipo. ') + 'Para que el Jardín la registre, pulsa «Descargar mis resultados» y envía el archivo a tu gestor de integridad por correo o Teams.'};
+  }
   const pend = 'No se pudo guardar en el registro central desde esta cuenta. Descarga o copia tu resumen y envíalo al equipo de gestores de integridad.';
   const db = cap.db || await usar('db'); const user = cap.user || await usar('user');
   if(!db || !user) return {ok:false, msg:pend};
@@ -1022,37 +989,6 @@ function pintarCierre(p){
   $('#resumen').innerHTML = VALORES.map(v => { const x = p.valores[v.k];
     return '<div class="res-item" style="--c:'+v.c+'"><i></i><div><b>'+v.n+'</b><span>'+esc(x.definicion)+'</span></div><div class="puntos" title="Cercanía '+(x.cercania||'–')+' de 5" aria-label="Cercanía '+(x.cercania||'sin dato')+' de 5">'+[1,2,3,4,5].map(n=>'<span class="'+(n<=(x.cercania||0)?'on':'')+'"></span>').join('')+'</div></div>'; }).join('');
   $('#texto-copia').value = textoResumen(p);
-  const url = enlaceForms(p);
-  $('#caja-forms').hidden = !url;
-  if(url) $('#btn-forms').href = url;
-}
-function camposForms(p, recorte){
-  const r = p.registro||{}, g = p.modo==='grupal', d = p.despues||{};
-  const corta = (t,n) => { t = String(t||'').replace(/\s+/g,' ').trim(); return (n && t.length>n) ? t.slice(0,n-1)+'…' : t; };
-  const valor = v => { const x = (p.valores||{})[v.k]||{}; return 'Definición: '+corta(x.definicion)+' | Experiencia: '+(corta(x.reflexion, recorte)||'–')+' | Cercanía: '+(x.cercania||'–')+'/5'+(x.comparacion?' | Comparación: '+corta(x.comparacion, recorte):''); };
-  return {
-    D01: g ? r.facilitador : r.nombre,
-    D02: r.dependencia||'',
-    D03: g ? 'Sesión grupal ('+(r.modalidad||'')+')' : (r.vinculacion||'')+(r.cargo?' · '+r.cargo:''),
-    D04: g ? 'Grupal' : 'Individual',
-    D05: g ? String(r.numParticipantes||'')+(r.participantes&&r.participantes.length?' · '+corta(r.participantes.join(', '), recorte?recorte*2:0):'') : '1',
-    D06: valor(POR_K.honestidad), D07: valor(POR_K.respeto), D08: valor(POR_K.compromiso),
-    D09: valor(POR_K.diligencia), D10: valor(POR_K.justicia), D11: valor(POR_K.coexistencia),
-    D12: 'Antes: '+(corta(d.antes)||'–')+' | Durante: '+(corta(d.durante)||'–')+' | Después: '+(corta(d.despues)||'–'),
-    D13: (p.cercaniaPromedio!=null?String(p.cercaniaPromedio).replace('.',','):'–')+'/5'+(d.cercaniaComentario?' · '+corta(d.cercaniaComentario, recorte):''),
-    D14: (d.invita||'–')+(d.invitaPorque?' · '+corta(d.invitaPorque, recorte):''),
-    D15: p.id+' · '+p.duracionMin+' min · '+new Date(p.fin).toLocaleString('es-CO')
-  };
-}
-function enlaceForms(p){
-  if(!FORMS_PRELLENADO) return null;
-  let base; try{ base = new URL(FORMS_PRELLENADO); }catch(e){ return null; }
-  for(const recorte of [0, 200, 120, 60, 1]){
-    const c = camposForms(p, recorte), u = new URL(base.href);
-    for(const [k,val] of Array.from(u.searchParams.entries())){ const m = String(val).trim().toUpperCase(); if(Object.prototype.hasOwnProperty.call(c, m)) u.searchParams.set(k, c[m]); }
-    if(u.href.length <= LIMITE_URL || recorte===1) return u.href;
-  }
-  return null;
 }
 function textoResumen(p){
   const r = p.registro, g = p.modo==='grupal';
@@ -1068,6 +1004,13 @@ function textoResumen(p){
   l.push('  ¿Invita a reflexionar?: '+(d.invita||'–')+(d.invitaPorque?' · '+d.invitaPorque:''));
   return l.join('\n');
 }
+async function guardarArchivo(nombre, datos, tipo){
+  const d = cap.downloads;
+  if(d){ try{ await d.save({filename:nombre, data:datos}); }catch(e){ if(e && e.code!=='declined') toast('No se pudo descargar el archivo.'); } return; }
+  const url = URL.createObjectURL(new Blob([datos], {type:tipo}));
+  const a = document.createElement('a'); a.href = url; a.download = nombre; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
 function toast(msg){ const t = document.createElement('div'); t.className='toast'; t.setAttribute('role','status'); t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(), 2600); }
 $('#btn-copiar').addEventListener('click', () => {
   const txt = $('#texto-copia').value;
@@ -1075,11 +1018,10 @@ $('#btn-copiar').addEventListener('click', () => {
   if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(()=>toast('Resumen copiado'), fallback); else fallback();
 });
 $('#btn-descargar').addEventListener('click', async () => {
-  const d = cap.downloads; if(!d || !S.partida) return;
+  if(!S.partida) return;
   const p = S.partida, nombre = (p.modo==='grupal' ? 'sesion-'+p.registro.dependencia : p.registro.nombre).normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-zA-Z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,50) || 'partida';
-  const html = '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>El dado de la integridad · resumen</title><style>body{font-family:Segoe UI,Arial,sans-serif;max-width:760px;margin:32px auto;padding:0 16px;color:#10261B;line-height:1.5}h1{color:#064B3D}pre{white-space:pre-wrap;font-family:inherit;background:#F4F7EE;padding:18px;border-radius:12px}</style></head><body><h1>El dado de la integridad</h1><pre>'+esc(textoResumen(p))+'</pre></body></html>';
-  try{ await d.save({filename:'dado-integridad-'+nombre+'.html', data:html}); }
-  catch(e){ if(e && e.code!=='declined') toast('No se pudo descargar. Usa «Copiar resumen».'); }
+  const html = '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>El dado de la integridad · resumen</title><style>body{font-family:Segoe UI,Arial,sans-serif;max-width:760px;margin:32px auto;padding:0 16px;color:#10261B;line-height:1.5}h1{color:#064B3D}pre{white-space:pre-wrap;font-family:inherit;background:#F4F7EE;padding:18px;border-radius:12px}</style></head><body><h1>El dado de la integridad</h1><p>Envía este archivo a tu gestor de integridad. Se carga en el Panel de gestores.</p><pre>'+esc(textoResumen(p))+'</pre><script type="application/json" id="datos-dado">'+JSON.stringify({marca:MARCA_ARCHIVO, version:1, partida:p}).replace(/</g,'\\u003c')+'</scr'+'ipt></body></html>';
+  await guardarArchivo('dado-integridad-'+nombre+'.html', html, 'text/html;charset=utf-8');
 });
 $('#btn-nueva').addEventListener('click', () => { S = nuevoEstado(); limpiarFormularios(); ir('inicio'); });
 function limpiarFormularios(){
@@ -1094,7 +1036,13 @@ let PARTIDAS = [];
 async function cargarPanel(){
   const db = cap.db || await usar('db');
   $('#tabla').innerHTML = '<tr><td colspan="7" class="vacio">Cargando partidas…</td></tr>';
-  if(!db){ PARTIDAS = []; pintarPanel('El registro no está disponible en esta vista. Abre la aplicación desde tu cuenta de claude.ai.'); return; }
+  $('#importar').hidden = !!db;
+  if(!db){
+    PARTIDAS = partidasLocales().sort((a,b) => String(b.fin).localeCompare(String(a.fin)));
+    $('#panel-actualizado').textContent = 'Partidas jugadas en este equipo y archivos de resultados cargados.';
+    pintarPanel('Aún no hay partidas en este equipo. Usa «Cargar archivos de resultados» con los archivos que te envíen los colaboradores.');
+    return;
+  }
   try{
     const usuarios = await db.collection('partidas').get();
     const lotes = await Promise.all(usuarios.docs.map(d => db.collection('partidas/'+d.id+'/juegos').get().then(q => q.docs.map(x => x.data())).catch(() => [])));
@@ -1144,22 +1092,27 @@ function alternarDetalle(tr){
     (p.modo==='grupal' && (p.registro||{}).participantes && p.registro.participantes.length ? '<p class="ayuda"><b>Asistentes:</b> '+esc(p.registro.participantes.join(', '))+'</p>' : '')+'</td>';
   tr.after(fila); tr.setAttribute('aria-expanded','true');
 }
-function pintarPanelWeb(){
-  const f = $('#lnk-forms-res'), x = $('#lnk-excel-res');
-  f.hidden = !FORMS_RESULTADOS; if(FORMS_RESULTADOS) f.href = FORMS_RESULTADOS;
-  x.hidden = !EXCEL_RESULTADOS; if(EXCEL_RESULTADOS) x.href = EXCEL_RESULTADOS;
-  $('#panelweb-pend').hidden = !!(FORMS_RESULTADOS || EXCEL_RESULTADOS);
-}
 $('#tabla').addEventListener('click', e => { const tr = e.target.closest('tr.fila'); if(tr) alternarDetalle(tr); });
 $('#tabla').addEventListener('keydown', e => { const tr = e.target.closest('tr.fila'); if(tr && (e.key==='Enter'||e.key===' ')){ e.preventDefault(); alternarDetalle(tr); } });
 $('#f-modo').addEventListener('change', () => pintarPanel());
 $('#f-texto').addEventListener('input', () => pintarPanel());
 $('#btn-actualizar').addEventListener('click', cargarPanel);
+function extraerPartida(texto){
+  const m = texto.match(/<script type="application\/json" id="datos-dado">([\s\S]*?)<\/script>/);
+  try{ const o = JSON.parse(m ? m[1] : texto); return (o && o.marca===MARCA_ARCHIVO) ? o.partida : (o && o.valores ? o : null); }catch(e){ return null; }
+}
+$('#archivos').addEventListener('change', async e => {
+  const archivos = Array.from(e.target.files||[]); if(!archivos.length) return;
+  const leidas = [], malas = [];
+  for(const f of archivos){ try{ const p = extraerPartida(await f.text()); if(p) leidas.push(p); else malas.push(f.name); }catch(err){ malas.push(f.name); } }
+  const n = agregarLocales(leidas);
+  e.target.value = '';
+  toast(n<0 ? 'No se pudieron guardar los datos en este equipo.' : (n+' partida'+(n===1?'':'s')+' nueva'+(n===1?'':'s')+' cargada'+(n===1?'':'s')+(leidas.length-n>0?' · '+(leidas.length-n)+' ya estaba'+(leidas.length-n===1?'':'n'):'')+(malas.length?' · '+malas.length+' archivo'+(malas.length===1?'':'s')+' no válido'+(malas.length===1?'':'s'):'')));
+  cargarPanel();
+});
 
 function cargarScript(src){ return new Promise((ok, no) => { if(window.XLSX) return ok(); const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = no; document.head.appendChild(s); }); }
 $('#btn-exportar').addEventListener('click', async () => {
-  const d = cap.downloads || await usar('downloads');
-  if(!d){ toast('La descarga no está disponible en esta vista.'); return; }
   if(!PARTIDAS.length){ toast('Aún no hay partidas para exportar.'); return; }
   try{ await cargarScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'); }catch(e){ toast('No se pudo preparar el archivo de Excel.'); return; }
   const resumen = PARTIDAS.map(p => { const r = p.registro||{}, x = p.despues||{};
@@ -1176,8 +1129,7 @@ $('#btn-exportar').addEventListener('click', async () => {
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(defs), 'Definiciones');
   const buf = XLSX.write(wb, {bookType:'xlsx', type:'array'});
   const hoy = new Date().toISOString().slice(0,10);
-  try{ await d.save({filename:'dado-integridad-JBB-'+hoy+'.xlsx', data:new Uint8Array(buf)}); }
-  catch(e){ if(e && e.code!=='declined') toast('No se pudo descargar el archivo.'); }
+  await guardarArchivo('dado-integridad-JBB-'+hoy+'.xlsx', new Uint8Array(buf), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 });
 
 /* ---------- Arranque ---------- */
