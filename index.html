@@ -535,6 +535,39 @@ tr.detalle td{background:#fff}
       </form>
     </section>
 
+    <!-- PANEL (VERSIÓN WEB) -->
+    <section data-pantalla="panelweb" hidden>
+      <div class="panel-cab">
+        <div>
+          <span class="pildora">Solo gestores de integridad</span>
+          <h1 style="margin-top:12px">Panel del dado</h1>
+          <p>En esta versión pública, los resultados de cada partida llegan al formulario de Microsoft Forms del Jardín.</p>
+        </div>
+        <div class="acciones"><button class="btn-link" type="button" data-ir="inicio">Volver al inicio</button></div>
+      </div>
+      <div class="panel-grid">
+        <div class="papel">
+          <span class="etiqueta">Resultados</span>
+          <h3 style="font-size:22px;margin-top:4px">Ver las partidas registradas</h3>
+          <p class="intro">Se abren con tu cuenta institucional de Microsoft 365. Solo las ven las personas con quienes compartas el formulario.</p>
+          <div class="acciones" style="margin-top:18px">
+            <a class="btn btn-pri" id="lnk-forms-res" href="#" target="_blank" rel="noopener">Ver respuestas en Forms</a>
+            <a class="btn btn-papel" id="lnk-excel-res" href="#" target="_blank" rel="noopener">Abrir el Excel de respuestas</a>
+          </div>
+          <p class="estado pend" id="panelweb-pend" hidden>Los enlaces a los resultados todavía no están conectados. Cuando el formulario esté creado, se agregan aquí.</p>
+        </div>
+        <div class="papel">
+          <span class="etiqueta">Seguimiento</span>
+          <h3 style="font-size:22px;margin-top:4px">Rutina sugerida para gestores</h3>
+          <ol class="reglas" style="margin-top:14px">
+            <li><div><b>Revisa las respuestas cada semana</b><p>En Forms verás el total de partidas y los gráficos de cada pregunta.</p></div></li>
+            <li><div><b>Exporta el Excel</b><p>Guárdalo en la carpeta de evidencias de integridad como respaldo.</p></div></li>
+            <li><div><b>Mira los valores más lejanos</b><p>Las cercanías bajas muestran qué valores reforzar en las sesiones.</p></div></li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
     <!-- PANEL -->
     <section data-pantalla="panel" hidden>
       <div class="panel-cab">
@@ -626,6 +659,9 @@ const CLAVE_BORRADOR = 'dadoIntegridadJBB.borrador.v1';
    Vacío = no se muestra el botón de envío. */
 const FORMS_PRELLENADO = '';
 const LIMITE_URL = 7000;
+/* Versión web (fuera de Claude): el panel enlaza a los resultados en Microsoft 365. */
+const FORMS_RESULTADOS = '';
+const EXCEL_RESULTADOS = '';
 
 const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
@@ -644,7 +680,6 @@ async function usar(n){ try{ return (window.claude && window.claude.use) ? await
 (async function(){
   const [db,user,downloads] = await Promise.all([usar('db'),usar('user'),usar('downloads')]);
   cap = {db,user,downloads};
-  if(!db) $('#btn-panel').hidden = true;
   if(downloads) $('#btn-descargar').hidden = false;
 })();
 
@@ -666,7 +701,8 @@ function ir(p){
   if(p==='juego') pintarJuego();
   if(p==='comparar') pintarComparar();
   if(p==='despues') pintarDespues();
-  if(p==='panel'){ if(!panelAbierto()){ ir('acceso'); return; } cargarPanel(); }
+  if(p==='panel'){ if(!panelAbierto()){ ir('acceso'); return; } if(!cap.db){ ir('panelweb'); return; } cargarPanel(); }
+  if(p==='panelweb'){ if(!panelAbierto()){ ir('acceso'); return; } pintarPanelWeb(); }
   guardarBorrador();
   window.scrollTo({top:0, behavior: reduceMov ? 'auto' : 'smooth'});
 }
@@ -1107,6 +1143,12 @@ function alternarDetalle(tr){
     (d.invitaPorque?'<p class="ayuda"><b>¿Por qué invita o no a reflexionar?</b> '+esc(d.invitaPorque)+'</p>':'')+
     (p.modo==='grupal' && (p.registro||{}).participantes && p.registro.participantes.length ? '<p class="ayuda"><b>Asistentes:</b> '+esc(p.registro.participantes.join(', '))+'</p>' : '')+'</td>';
   tr.after(fila); tr.setAttribute('aria-expanded','true');
+}
+function pintarPanelWeb(){
+  const f = $('#lnk-forms-res'), x = $('#lnk-excel-res');
+  f.hidden = !FORMS_RESULTADOS; if(FORMS_RESULTADOS) f.href = FORMS_RESULTADOS;
+  x.hidden = !EXCEL_RESULTADOS; if(EXCEL_RESULTADOS) x.href = EXCEL_RESULTADOS;
+  $('#panelweb-pend').hidden = !!(FORMS_RESULTADOS || EXCEL_RESULTADOS);
 }
 $('#tabla').addEventListener('click', e => { const tr = e.target.closest('tr.fila'); if(tr) alternarDetalle(tr); });
 $('#tabla').addEventListener('keydown', e => { const tr = e.target.closest('tr.fila'); if(tr && (e.key==='Enter'||e.key===' ')){ e.preventDefault(); alternarDetalle(tr); } });
